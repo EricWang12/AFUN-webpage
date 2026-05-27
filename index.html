@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="AFUN: Towards an Affordance Foundation Model for Functionality Understanding" />
+  <meta name="keywords" content="AFUN, affordance, foundation model, robot manipulation, functionality understanding" />
+  <title>AFUN: Towards an Affordance Foundation Model for Functionality Understanding</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet" />
+
+  <!-- Bulma & Icons -->
+  <link rel="stylesheet" href="./static/css/bulma.min.css" />
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" />
+  <link rel="stylesheet" href="./static/css/index.css" />
+</head>
+<body>
+
+  <!-- Hero / Title Block -->
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">
+              AFUN: Towards an Affordance Foundation<br/>Model for Functionality Understanding
+            </h1>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://www.zhaoningwang.com/">Zhaoning Wang</a><sup>1,*</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://scholar.google.com/citations?user=yD2zoP8AAAAJ">Yi Zhong</a><sup>1,*</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://jayefu.github.io/">Jiawei Fu</a><sup>2</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://hichristensen.com/">Henrik I. Christensen</a><sup>2</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://jun.engin.umich.edu/">Jun Gao</a><sup>1,3</sup>
+              </span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><sup>1</sup>University of Michigan</span>
+              <span class="author-block"><sup>2</sup>University of California, San Diego</span>
+              <span class="author-block"><sup>3</sup>NVIDIA</span>
+            </div>
+
+            <div class="is-size-6 publication-authors" style="margin-top:0.25rem;">
+              <span class="author-block"><sup>*</sup>Equal contribution</span>
+            </div>
+
+            <!-- Links: Paper, arXiv, Code -->
+            <div class="column has-text-centered" style="margin-top:1.25rem;">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="static/afun_paper.pdf" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                    </span>
+                    <span>Paper</span>
+                  </a>
+                </span>
+                <!-- ArXiv (placeholder) -->
+                <span class="link-block">
+                  <a href="#" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="ai ai-arxiv"></i></span>
+                    <span>arXiv</span>
+                  </a>
+                </span>
+                <!-- Video (placeholder) -->
+                <span class="link-block">
+                  <a href="#" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fab fa-youtube"></i></span>
+                    <span>Video</span>
+                  </a>
+                </span>
+                <!-- Code (placeholder) -->
+                <span class="link-block">
+                  <a href="#" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon"><i class="fab fa-github"></i></span>
+                    <span>Code</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Teaser -->
+  <section class="hero teaser">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <img src="./static/images/afun_teaser.png" alt="AFUN method overview" />
+
+        <!-- Highlight pills: instant takeaways -->
+        <div class="afun-pills">
+          <div class="afun-pill">
+            <div class="afun-pill-stat">Where + How, Jointly</div>
+            <div class="afun-pill-body">
+              A single forward pass predicts both a task-conditional functional mask (<em>where</em> to interact) and a 3D post-contact motion curve (<em>how</em> to interact).
+            </div>
+          </div>
+          <div class="afun-pill">
+            <div class="afun-pill-stat">SOTA Affordance Segmentation</div>
+            <div class="afun-pill-body">
+              <strong>+23.9 / +26.3</strong> mean gIoU/cIoU over the best baseline, across 8 test sets from 4 affordance benchmarks (RAGNet, HOVA-500K, ReasonAFF, InstructPart).
+            </div>
+          </div>
+          <div class="afun-pill">
+            <div class="afun-pill-stat">Functionality with Explicit 3D Motion</div>
+            <div class="afun-pill-body">
+              We represent affordance as a 3D B&eacute;zier-spline curve&mdash;smooth, executable robot trajectories with gripper orientation from the curve tangent.
+            </div>
+          </div>
+          <div class="afun-pill">
+            <div class="afun-pill-stat">Largest Public Affordance Data</div>
+            <div class="afun-pill-body">
+              One of the largest public affordance datasets to date: robot, human egocentric, simulation, and real-world scan data unified in a shared schema.
+            </div>
+          </div>
+        </div>
+
+        <p style="text-align: center;">
+          <span style="font-size: 1.15em;">
+          We present <strong>AFUN</strong>, a step toward an affordance foundation model for functionality understanding. From a single RGB-D observation and a language task description, AFUN predicts a task-conditional functional mask (<em>where</em> to interact) and a 3D post-contact motion curve (<em>how</em> to interact). To support open-world generalization, we build a large-scale standardized data pipeline that converts heterogeneous robot, human, simulation, and real-world scan data into a shared affordance schema with language, masks, and object-centric 3D motion labels.
+          </span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Abstract -->
+  <section class="section" id="abstract">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+              Affordance understanding bridges visual perception and physical action, serving as an explainable interface for robot manipulation in open and unstructured real-world environments. Yet, building an affordance foundation model that not only understands <em>where</em> and <em>how</em> the interaction should happen, but also generalizes across diverse environments, objects, and tasks, remains a long-standing research challenge. Existing methods typically address only part of this challenge, either localizing task-relevant regions without specifying executable motion, or predicting motion but with limited scalability.
+            </p>
+            <p>
+              In this paper, we present <strong>AFUN</strong>, a step towards an affordance foundation model for functionality understanding. From a single RGB-D observation and a language task description, AFUN predicts a task-conditional functional mask (<em>where</em> to interact) and a 3D post-contact motion curve (<em>how</em> to interact). To support open-world generalization, we build a large-scale standardized data pipeline that converts heterogeneous robot, human, simulation, and real-world scan data into a shared affordance schema with language, masks, and object-centric 3D motion labels.
+            </p>
+            <p>
+              We evaluate AFUN from three aspects: for affordance segmentation, AFUN outperforms all baselines by a large margin across 8 test sets from 4 benchmarks, improving mean gIoU/cIoU by <strong>+23.9/+26.3</strong>; for contact-point prediction, it predicts substantially more accurate points, with a <strong>12.7&ndash;61.3%</strong> hit-rate gain over the best baseline; and for 3D motion, it achieves the best performance on all three test sets. AFUN can be deployed for real-world robot manipulation without finetuning for robot embodiment, demonstrating the ability to adapt to open-world affordance tasks.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br>
+  </section>
+
+
+  <!-- Prediction Gallery (interactive 3D viewer per card) -->
+  <section class="section" id="predictions">
+    <div class="container is-max-widescreen">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-full">
+          <h2 class="title is-3">Prediction Gallery</h2>
+          <p class="has-text-centered" style="margin-bottom: 0.25rem; color:#555;">
+            Cherry-picked AFUN predictions. Each card embeds the input RGB (inset) and the predicted 3D motion overlaid on the scene point cloud&mdash;<em>drag</em> to orbit, <em>scroll</em> to zoom.
+          </p>
+          <p class="has-text-centered preds-legend-wrap" style="margin-bottom: 0.75rem;">
+            <span class="preds-legend">
+              <span>Start</span>
+              <span class="preds-legend-bar" aria-hidden="true"></span>
+              <span>End</span>
+            </span>
+          </p>
+
+          <div class="preds-gallery" role="region" aria-label="AFUN prediction gallery">
+            <button class="preds-nav preds-prev" aria-label="Previous prediction">&lsaquo;</button>
+            <div class="preds-track" id="predsTrack" aria-live="polite"></div>
+            <button class="preds-nav preds-next" aria-label="Next prediction">&rsaquo;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Real-Robot Deployment (videos) -->
+  <section class="section" id="robot">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Real-Robot Deployment</h2>
+          <p style="text-align: left; margin-bottom: 0.75rem;">
+            Without any robot-specific finetuning, AFUN predicts a precise functional mask and 3D motion that the robot uses to plan and execute manipulation in the real world. The same model generalizes across object categories, language instructions, and embodiments, suggesting a practical path toward open-world affordance models that unify functionality perception with executable action.
+          </p>
+
+          <div class="vids-gallery" role="region" aria-label="Real-robot deployment videos">
+            <button class="vids-nav vids-prev" aria-label="Previous video">&lsaquo;</button>
+            <div class="vids-track" id="vidsTrack" aria-live="polite"></div>
+            <button class="vids-nav vids-next" aria-label="Next video">&rsaquo;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Method Overview -->
+  <section class="hero teaser" id="method">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <h2 class="title is-3 has-text-centered">Method Overview</h2>
+        <img src="./static/images/afun_pipeline.png" alt="AFUN model pipeline" />
+        <p style="text-align: left; margin-top: 1rem;">
+          Given an RGB-D observation and a language task description, AFUN jointly predicts <em>where</em> to interact (a task-conditional functional segmentation mask) and <em>how</em> to interact (a 3D post-contact motion represented as a B&eacute;zier spline curve). The model routes pretrained vision&ndash;language features through lightweight metaqueries into a segmentation decoder for the mask and a curve head for the 3D motion, leveraging strong visual&ndash;language, segmentation, and 3D geometric priors with lightweight trainable modules&mdash;enabling joint mask and motion prediction without finetuning the large backbones.
+        </p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Data Pipeline -->
+  <section class="hero teaser" id="data">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <h2 class="title is-3 has-text-centered">Data Pipeline</h2>
+        <img src="./static/images/afun_data_pipeline.png" alt="AFUN data pipeline" />
+        <p style="text-align: left; margin-top: 1rem;">
+          We build a unified data pipeline that converts heterogeneous robot, human egocentric, simulation, and real-world scan data into a shared affordance schema with language task phrases, functional masks, and object-centric 3D motion labels. Rather than approximating object motion via hand or gripper proxies, we track the <em>object itself</em> through depth-fused mask propagation, yielding on-object 3D trajectories at scale and producing one of the largest public affordance datasets to date.
+        </p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Qualitative Results -->
+  <section class="hero teaser" id="results">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <h2 class="title is-3 has-text-centered">Qualitative Results</h2>
+
+        <h3 class="title is-5 has-text-centered" style="margin-top: 1.25rem; margin-bottom: 0.5rem;">
+          Affordance Segmentation
+        </h3>
+        <img src="./static/images/afun_quali_seg.png" alt="AFUN qualitative segmentation comparison" />
+
+        <h3 class="title is-5 has-text-centered" style="margin-top: 1.75rem; margin-bottom: 0.5rem;">
+          3D Motion Prediction
+        </h3>
+        <img src="./static/images/afun_quali_mot.png" alt="AFUN qualitative 3D motion comparison" />
+      </div>
+    </div>
+  </section>
+
+
+  <!-- BibTeX -->
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre><code>@article{wang_afun,
+  title   = {{AFUN}: Towards an Affordance Foundation Model for
+             Functionality Understanding},
+  author  = {Wang, Zhaoning and Zhong, Yi and Fu, Jiawei and
+             Christensen, Henrik I. and Gao, Jun},
+  note    = {$^*$Equal contribution: Z.~Wang and Y.~Zhong.}
+}</code></pre>
+    </div>
+  </section>
+
+
+  <footer class="footer">
+    <div class="container">
+      <div class="content has-text-centered">
+        <p style="opacity:0.8;">
+          Site template adapted from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> and <a href="https://www.zhaoningwang.com/PartUV/">PartUV</a>, released under
+          <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- Minimal JS -->
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+
+  <!-- Import map so the prediction-gallery 3D viewer can use bare specifiers. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three":          "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/":  "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+  import * as THREE       from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { Line2 }         from 'three/addons/lines/Line2.js';
+  import { LineGeometry }  from 'three/addons/lines/LineGeometry.js';
+  import { LineMaterial }  from 'three/addons/lines/LineMaterial.js';
+
+  (function() {
+    const make = (tag, cls, html) => {
+      const el = document.createElement(tag);
+      if (cls) el.className = cls;
+      if (html !== undefined) el.innerHTML = html;
+      return el;
+    };
+
+    // ==== QUALITATIVE RESULTS GALLERY ====
+    const APPS = [
+      {
+        img: './static/images/afun_gallery_hova.jpg',
+        title: 'HOVA-500K — Affordance Segmentation',
+        desc: 'AFUN produces task-conditional functional masks that align tightly with object handles, knobs, and graspable regions across diverse open-world scenes.'
+      },
+      {
+        img: './static/images/afun_gallery_instruct_a.jpg',
+        title: 'InstructPart — Instruction-Conditioned Masks (1/2)',
+        desc: 'The same object affords different regions under different language instructions. AFUN adapts its mask to the instruction rather than emitting a fixed part segmentation.'
+      },
+      {
+        img: './static/images/afun_gallery_instruct_b.jpg',
+        title: 'InstructPart — Instruction-Conditioned Masks (2/2)',
+        desc: 'Further examples showing AFUN responding to nuanced phrasing — pour, lift, twist, open — with appropriately localized masks.'
+      },
+      {
+        img: './static/images/afun_gallery_reasoning.jpg',
+        title: 'ReasonAFF — Reasoning-Based Grounding',
+        desc: 'AFUN handles indirect references and reasoning-style prompts, grounding the language intent to the functionally relevant region.'
+      },
+      {
+        img: './static/images/afun_gallery_motion_a.jpg',
+        title: '3D Motion Prediction (1/2)',
+        desc: 'AFUN predicts smooth 3D post-contact motion curves directly in object space, capturing both the start contact and the full post-contact trajectory.'
+      },
+      {
+        img: './static/images/afun_gallery_motion_b.jpg',
+        title: '3D Motion Prediction (2/2)',
+        desc: 'The Bézier spline curve representation remains expressive enough to capture diverse behaviors while structured enough for stable supervision and robot execution.'
+      },
+    ];
+
+    const appsTrack = document.getElementById('appsTrack');
+    function buildAppCard(app) {
+      const card = make('article','app-card');
+      const fig  = make('div','app-figure');
+      const img  = new Image();
+      img.loading = 'lazy';
+      img.alt = app.title;
+      img.src = app.img;
+      fig.appendChild(img);
+
+      const cap = make('div','app-caption', `<h3>${app.title}</h3><p>${app.desc}</p>`);
+      card.appendChild(fig);
+      card.appendChild(cap);
+      return card;
+    }
+    if (appsTrack) {
+      APPS.forEach(a => appsTrack.appendChild(buildAppCard(a)));
+
+      const appsPrev = document.querySelector('.apps-prev');
+      const appsNext = document.querySelector('.apps-next');
+
+      function scrollApps(dir = 1) {
+        const first = appsTrack.querySelector('.app-card');
+        if (!first) return;
+        const step = first.getBoundingClientRect().width + parseFloat(getComputedStyle(appsTrack).gap || '16');
+        appsTrack.scrollBy({ left: dir * step, behavior: 'smooth' });
+      }
+      appsPrev.addEventListener('click', () => scrollApps(-1));
+      appsNext.addEventListener('click', () => scrollApps(1));
+
+      // Drag / swipe
+      let aDown = false, aStartX = 0, aStartScroll = 0;
+      appsTrack.addEventListener('pointerdown', e => {
+        aDown = true; aStartX = e.clientX; aStartScroll = appsTrack.scrollLeft; appsTrack.setPointerCapture(e.pointerId);
+      });
+      appsTrack.addEventListener('pointermove', e => {
+        if (!aDown) return;
+        const dx = e.clientX - aStartX;
+        appsTrack.scrollLeft = aStartScroll - dx;
+      });
+      const aEnd = () => { aDown = false; };
+      appsTrack.addEventListener('pointerup', aEnd);
+      appsTrack.addEventListener('pointerleave', aEnd);
+    }
+
+
+    // ==== VIDEO GALLERY (2 visible, step by one) ====
+    const VIDS = [
+      { src: './AFUN-supplementary-videos/Lid_on_pot_1.mp4',  caption: 'Put the lid on the pot' },
+      { src: './AFUN-supplementary-videos/Microwave_1.mp4',   caption: 'Open the microwave' },
+      { src: './AFUN-supplementary-videos/Lid_3.mp4',         caption: 'Take off the lid' },
+      { src: './AFUN-supplementary-videos/Box_1.mp4',         caption: 'Open the toy drawer' },
+      { src: './AFUN-supplementary-videos/Cabinet_1.mp4',     caption: 'Open the cabinet' },
+      { src: './AFUN-supplementary-videos/Screwdriver_2.mp4', caption: 'Pick up the screwdriver' },
+      { src: './AFUN-supplementary-videos/Lid_1.mp4',         caption: 'Take off the lid' },
+      { src: './AFUN-supplementary-videos/Microwave_3.mp4?v=2', caption: 'Open the microwave' },
+      { src: './AFUN-supplementary-videos/Box_2.mp4',         caption: 'Open the toy drawer' },
+      { src: './AFUN-supplementary-videos/Cabinet_2.mp4',     caption: 'Open the cabinet' },
+      { src: './AFUN-supplementary-videos/Lid_4.mp4',         caption: 'Take off the lid' },
+      { src: './AFUN-supplementary-videos/Microwave_2.mp4?v=2', caption: 'Open the microwave' },
+      { src: './AFUN-supplementary-videos/Screwdriver_1.mp4', caption: 'Pick up the screwdriver' },
+      { src: './AFUN-supplementary-videos/Lid_2.mp4',         caption: 'Take off the lid' },
+    ];
+
+    const vidsTrack = document.getElementById('vidsTrack');
+    function buildVidCard(v) {
+      const card = make('article','vid-card');
+      const fig  = make('div','vid-figure');
+      const video = document.createElement('video');
+      video.src = v.src;
+      video.controls = true;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      video.setAttribute('muted','');
+      video.setAttribute('loop','');
+      video.setAttribute('playsinline','');
+      fig.appendChild(video);
+      const cap = make('div','vid-caption', `<h3>${v.caption}</h3>`);
+      card.appendChild(fig);
+      card.appendChild(cap);
+      return card;
+    }
+    if (vidsTrack) {
+      VIDS.forEach(v => vidsTrack.appendChild(buildVidCard(v)));
+
+      // Only play videos that are actually visible in the horizontal scroller.
+      const vidObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const v = entry.target;
+          if (entry.isIntersecting) {
+            v.play().catch(() => {});
+          } else {
+            v.pause();
+          }
+        });
+      }, { root: vidsTrack, threshold: 0.6 });
+      vidsTrack.querySelectorAll('video').forEach(v => vidObserver.observe(v));
+
+      const vidsPrev = document.querySelector('.vids-prev');
+      const vidsNext = document.querySelector('.vids-next');
+
+      // step size = one card width + gap
+      function stepSize() {
+        const first = vidsTrack.querySelector('.vid-card');
+        if (!first) return 0;
+        return first.getBoundingClientRect().width + parseFloat(getComputedStyle(vidsTrack).gap || '16');
+      }
+
+      function scrollVids(dir = 1) {
+        const step = stepSize();
+        if (!step) return;
+        const max = vidsTrack.scrollWidth - vidsTrack.clientWidth;
+        const cur = vidsTrack.scrollLeft;
+        let target = cur + dir * step;
+        // right arrow wraps from end back to start; left arrow is hidden at start so no left wrap.
+        if (dir > 0 && cur >= max - 2) {
+          target = 0;
+        }
+        vidsTrack.scrollTo({ left: target, behavior: 'smooth' });
+      }
+      vidsPrev.addEventListener('click', () => scrollVids(-1));
+      vidsNext.addEventListener('click', () => scrollVids(1));
+
+      // Hide the left arrow when we're at the very beginning.
+      function updatePrevVisibility() {
+        vidsPrev.style.visibility = vidsTrack.scrollLeft <= 2 ? 'hidden' : 'visible';
+      }
+      vidsTrack.addEventListener('scroll', updatePrevVisibility, { passive: true });
+      window.addEventListener('resize', updatePrevVisibility);
+      updatePrevVisibility();
+
+      // Drag / swipe
+      let vDown = false, vStartX = 0, vStartScroll = 0;
+      vidsTrack.addEventListener('pointerdown', e => {
+        // don't start drag from inside the video element (let native controls work)
+        if (e.target.tagName === 'VIDEO') return;
+        vDown = true; vStartX = e.clientX; vStartScroll = vidsTrack.scrollLeft; vidsTrack.setPointerCapture(e.pointerId);
+      });
+      vidsTrack.addEventListener('pointermove', e => {
+        if (!vDown) return;
+        const dx = e.clientX - vStartX;
+        vidsTrack.scrollLeft = vStartScroll - dx;
+      });
+      const vEnd = () => { vDown = false; };
+      vidsTrack.addEventListener('pointerup', vEnd);
+      vidsTrack.addEventListener('pointerleave', vEnd);
+    }
+
+
+    // ==== PREDICTION GALLERY (inline 3D viewer per card) ====
+    // Each card shows:
+    //   - a Three.js WebGL canvas with the downsampled point cloud + 3D trajectory
+    //   - an RGB thumbnail (input) overlaid with the 2D-projected trajectory
+    //   - the language instruction + dataset badge
+    //
+    // Data lives in ./static/results/<out_name>/:
+    //   rgb.png, trajectory_50pts.txt, pointcloud_small.bin
+    // Master manifest at ./static/results/index.json — add an entry to expand.
+    //
+    // For new datasets, also add a key to DATASET_LABELS below to get a tidy badge.
+    // Regenerate pointcloud_small.bin via scripts/preprocess_pointclouds.py.
+
+    const RESULTS_BASE = './static/results/';
+    const DATASET_LABELS = {
+      agibot:    'AgiBot',
+      droid:     'DROID',
+      robomind2: 'RoboMIND-v2',
+      robomind:  'RoboMIND',
+      ego4d:     'Ego4D',
+      epic:      'Epic-Kitchens',
+      scenefun3d:'SceneFun3D',
+      calvin:    'Calvin',
+      ours:      'AFUN test set',
+    };
+    function datasetLabel(outName) {
+      const lower = (outName || '').toLowerCase();
+      for (const key of Object.keys(DATASET_LABELS)) {
+        if (lower.includes(key)) return DATASET_LABELS[key];
+      }
+      return (outName || '').replace(/^\d+_?/, '').replace(/_/g, ' ');
+    }
+
+    // Yellow -> blue gradient for the trajectory.
+    const TRAJ_START = [255, 234, 0];   // #FFEA00
+    const TRAJ_END   = [25, 118, 210];  // #1976D2
+    const lerp    = (a, b, t) => a + (b - a) * t;
+    const lerpRGB = (c1, c2, t) => [
+      Math.round(lerp(c1[0], c2[0], t)),
+      Math.round(lerp(c1[1], c2[1], t)),
+      Math.round(lerp(c1[2], c2[2], t)),
+    ];
+
+    // Pinhole projection (camera frame -> pixel) for the RGB thumbnail overlay.
+    function project3Dto2D(p, K) {
+      const X = p[0], Y = p[1], Z = p[2];
+      if (!(Z > 0)) return null;
+      const fx = K[0][0], fy = K[1][1], cx = K[0][2], cy = K[1][2];
+      return [(X / Z) * fx + cx, (Y / Z) * fy + cy];
+    }
+
+    function parseTrajectoryText(text) {
+      return text.split('\n').map(line => {
+        const s = line.trim();
+        if (!s || s.startsWith('#')) return null;
+        const parts = s.split(/\s+/).map(Number);
+        if (parts.length < 3 || parts.some(Number.isNaN)) return null;
+        return [parts[0], parts[1], parts[2]];
+      }).filter(Boolean);
+    }
+
+    // pointcloud_small.bin layout: uint32 N, then float32[N*3] xyz, then uint8[N*3] rgb.
+    function parsePointCloudBin(buf) {
+      if (!buf || buf.byteLength < 4) return null;
+      const view = new DataView(buf);
+      const N = view.getUint32(0, true);
+      if (N === 0 || buf.byteLength < 4 + N * (12 + 3)) return null;
+      const positions = new Float32Array(buf, 4, N * 3).slice();
+      const colors    = new Uint8Array(buf, 4 + N * 12, N * 3).slice();
+      return { N, positions, colors };
+    }
+
+    function buildOverlaySVG(traj2d, W, H) {
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(svgNS, 'svg');
+      svg.classList.add('preds-overlay');
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+
+      if (traj2d.length < 2) return svg;
+
+      // Stroke widths scale with image size so the line is visible at any res.
+      const haloW   = Math.max(4,   Math.round(Math.min(W, H) * 0.012));
+      const lineW   = Math.max(2.5, Math.round(Math.min(W, H) * 0.008));
+      const markerR = Math.max(4,   Math.round(Math.min(W, H) * 0.014));
+
+      const N = traj2d.length;
+      for (let i = 0; i < N - 1; i++) {
+        const l = document.createElementNS(svgNS, 'line');
+        l.setAttribute('x1', traj2d[i][0]);   l.setAttribute('y1', traj2d[i][1]);
+        l.setAttribute('x2', traj2d[i+1][0]); l.setAttribute('y2', traj2d[i+1][1]);
+        l.setAttribute('stroke', 'rgba(255,255,255,0.9)');
+        l.setAttribute('stroke-width', haloW);
+        l.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(l);
+      }
+      for (let i = 0; i < N - 1; i++) {
+        const t = i / (N - 2);
+        const c = lerpRGB(TRAJ_START, TRAJ_END, t);
+        const l = document.createElementNS(svgNS, 'line');
+        l.setAttribute('x1', traj2d[i][0]);   l.setAttribute('y1', traj2d[i][1]);
+        l.setAttribute('x2', traj2d[i+1][0]); l.setAttribute('y2', traj2d[i+1][1]);
+        l.setAttribute('stroke', `rgb(${c[0]},${c[1]},${c[2]})`);
+        l.setAttribute('stroke-width', lineW);
+        l.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(l);
+      }
+      const start = document.createElementNS(svgNS, 'circle');
+      start.setAttribute('cx', traj2d[0][0]);
+      start.setAttribute('cy', traj2d[0][1]);
+      start.setAttribute('r', markerR);
+      start.setAttribute('fill', `rgb(${TRAJ_START.join(',')})`);
+      start.setAttribute('stroke', 'rgba(255,255,255,0.95)');
+      start.setAttribute('stroke-width', Math.max(1.5, markerR * 0.35));
+      svg.appendChild(start);
+      const end = document.createElementNS(svgNS, 'circle');
+      end.setAttribute('cx', traj2d[N-1][0]);
+      end.setAttribute('cy', traj2d[N-1][1]);
+      end.setAttribute('r', Math.max(3, markerR * 0.7));
+      end.setAttribute('fill', `rgb(${TRAJ_END.join(',')})`);
+      end.setAttribute('stroke', 'rgba(255,255,255,0.95)');
+      end.setAttribute('stroke-width', Math.max(1.2, markerR * 0.3));
+      svg.appendChild(end);
+      return svg;
+    }
+
+    // ---- Three.js viewer (per card) ----
+    function createThreeViewer(canvas, pc, traj3d) {
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: false,
+        powerPreference: 'low-power',
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+
+      let w = Math.max(canvas.clientWidth, 1);
+      let h = Math.max(canvas.clientHeight, 1);
+      renderer.setSize(w, h, false);
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0d0d10);
+
+      // Scene centroid + full XYZ bounding box.
+      // bbox diagonal is a more stable scale than (maxZ - minZ): the latter is
+      // dominated by background depth in scenes like DROID (5 m far points).
+      const N = pc.N;
+      let cx = 0, cy = 0, cz = 0;
+      let minX =  Infinity, minY =  Infinity, minZ =  Infinity;
+      let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+      for (let i = 0; i < N; i++) {
+        const x = pc.positions[i*3], y = pc.positions[i*3+1], z = pc.positions[i*3+2];
+        cx += x; cy += y; cz += z;
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+        if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+      }
+      cx /= N; cy /= N; cz /= N;
+      const dx = maxX - minX, dy = maxY - minY, dz = maxZ - minZ;
+      const bboxDiag = Math.max(Math.sqrt(dx*dx + dy*dy + dz*dz), 0.3);
+
+      // Trajectory bbox + center + diagonal. Used to scale trajectory
+      // annotations (markers, sphere radii) proportional to the motion
+      // itself, and to tighten the camera fit when the trajectory is a
+      // small fraction of the scene (e.g. DROID toaster: 9 cm motion in
+      // a 9 m scene -- a bbox-fit view shrinks it to a few pixels).
+      let tMinX =  Infinity, tMinY =  Infinity, tMinZ =  Infinity;
+      let tMaxX = -Infinity, tMaxY = -Infinity, tMaxZ = -Infinity;
+      for (const p of traj3d) {
+        if (p[0] < tMinX) tMinX = p[0]; if (p[0] > tMaxX) tMaxX = p[0];
+        if (p[1] < tMinY) tMinY = p[1]; if (p[1] > tMaxY) tMaxY = p[1];
+        if (p[2] < tMinZ) tMinZ = p[2]; if (p[2] > tMaxZ) tMaxZ = p[2];
+      }
+      const trajDiag = Math.max(Math.sqrt(
+        (tMaxX-tMinX)**2 + (tMaxY-tMinY)**2 + (tMaxZ-tMinZ)**2
+      ), 0.02);
+      const targetX = (tMinX + tMaxX) / 2;
+      const targetY = (tMinY + tMaxY) / 2;
+      const targetZ = (tMinZ + tMaxZ) / 2;
+
+      // Camera frame: Y-down, Z-forward. Start near the RGB camera position
+      // (origin), backed up along -Z. We pick the tighter of two fits:
+      //   bboxFit -- fit the whole point cloud in the FOV.
+      //   trajFit -- fit ~5x the trajectory size in the FOV.
+      // The min auto-zooms scenes where the trajectory is tiny relative to
+      // the bbox, while leaving normal-scale scenes alone.
+      const fovDeg = 45;
+      const halfFovRad = (fovDeg * 0.5) * Math.PI / 180;
+      const bboxFit = (bboxDiag * 0.5) / Math.tan(halfFovRad) * 0.55;
+      const trajFit = (trajDiag * 5) * 0.5 / Math.tan(halfFovRad);
+      const fitFromCentroid = Math.min(bboxFit, trajFit);
+      const backupZ = Math.max(fitFromCentroid - targetZ, trajDiag * 0.5);
+
+      const camera = new THREE.PerspectiveCamera(fovDeg, w / h, 0.01, 100);
+      camera.up.set(0, -1, 0);
+      camera.position.set(0, 0, -backupZ);
+      camera.lookAt(targetX, targetY, targetZ);
+
+      const controls = new OrbitControls(camera, canvas);
+      controls.target.set(targetX, targetY, targetZ);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.rotateSpeed = 0.6;
+      controls.zoomSpeed = 0.85;
+      controls.panSpeed = 0.6;
+      controls.minDistance = trajDiag * 0.4;
+      controls.maxDistance = bboxDiag * 2;
+
+      // Camera->target distance — used to derive consistent on-screen sizes.
+      // (With sizeAttenuation=true, world_size / view_distance is what becomes
+      // screen pixels, so scaling world_size with this distance keeps points
+      // and markers visually similar across scenes.)
+      const cameraDist = Math.sqrt(
+        targetX * targetX + targetY * targetY + (targetZ + backupZ) ** 2
+      );
+
+      // Point cloud as colored points.
+      const pcGeom = new THREE.BufferGeometry();
+      pcGeom.setAttribute('position', new THREE.BufferAttribute(pc.positions, 3));
+      const colorsFloat = new Float32Array(N * 3);
+      for (let i = 0; i < N * 3; i++) colorsFloat[i] = pc.colors[i] / 255;
+      pcGeom.setAttribute('color', new THREE.BufferAttribute(colorsFloat, 3));
+      // Screen-pixel-constant point size (sizeAttenuation: false).
+      // Previously we sized in world units with perspective attenuation,
+      // which made DROID's far background points (Z up to 5 m) shrink to
+      // sub-pixel size while foreground points were huge -- the cloud
+      // visually looked "smaller" than the other cards. Constant pixel
+      // size makes every point identical across scenes and depths.
+      const pcMat = new THREE.PointsMaterial({
+        size: 5,
+        vertexColors: true,
+        sizeAttenuation: false,
+      });
+      const cloud = new THREE.Points(pcGeom, pcMat);
+      scene.add(cloud);
+
+      // Trajectory as a thick Line2 with yellow->blue vertex colors.
+      const trajPositions = [];
+      const trajColors    = [];
+      for (let i = 0; i < traj3d.length; i++) {
+        trajPositions.push(traj3d[i][0], traj3d[i][1], traj3d[i][2]);
+        const t = i / Math.max(traj3d.length - 1, 1);
+        const c = lerpRGB(TRAJ_START, TRAJ_END, t);
+        trajColors.push(c[0]/255, c[1]/255, c[2]/255);
+      }
+      const lineGeom = new LineGeometry();
+      lineGeom.setPositions(trajPositions);
+      lineGeom.setColors(trajColors);
+      const lineMat = new LineMaterial({
+        vertexColors: true,
+        linewidth: 4,
+        resolution: new THREE.Vector2(w, h),
+        worldUnits: false,
+      });
+      const line = new Line2(lineGeom, lineMat);
+      line.computeLineDistances();
+      scene.add(line);
+
+      // Start/end markers — sized proportional to the trajectory (so they
+      // don't engulf short motions) with a viewing-distance floor so they
+      // remain visible from the initial camera distance.
+      const startRadius = Math.max(trajDiag * 0.055, cameraDist * 0.013);
+      const endRadius   = Math.max(trajDiag * 0.04,  cameraDist * 0.009);
+      const startMat  = new THREE.MeshBasicMaterial({ color: 0xFFEA00 });
+      const startGeom = new THREE.SphereGeometry(startRadius, 16, 12);
+      const startMesh = new THREE.Mesh(startGeom, startMat);
+      startMesh.position.set(traj3d[0][0], traj3d[0][1], traj3d[0][2]);
+      scene.add(startMesh);
+
+      const endMat  = new THREE.MeshBasicMaterial({ color: 0x1976D2 });
+      const endGeom = new THREE.SphereGeometry(endRadius, 16, 12);
+      const endMesh = new THREE.Mesh(endGeom, endMat);
+      const ep = traj3d[traj3d.length - 1];
+      endMesh.position.set(ep[0], ep[1], ep[2]);
+      scene.add(endMesh);
+
+      // Render loop — only ticks while running.
+      let running = false, frameId = null;
+      function tick() {
+        if (!running) return;
+        controls.update();
+        renderer.render(scene, camera);
+        frameId = requestAnimationFrame(tick);
+      }
+      function start() {
+        if (running) return;
+        running = true;
+        tick();
+      }
+      function stop() {
+        running = false;
+        if (frameId) cancelAnimationFrame(frameId);
+        frameId = null;
+      }
+      function handleResize() {
+        const nw = Math.max(canvas.clientWidth, 1);
+        const nh = Math.max(canvas.clientHeight, 1);
+        if (nw === w && nh === h) return;
+        w = nw; h = nh;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        lineMat.resolution.set(w, h);
+      }
+      const ro = new ResizeObserver(handleResize);
+      ro.observe(canvas);
+
+      function dispose() {
+        stop();
+        ro.disconnect();
+        controls.dispose();
+        pcGeom.dispose();   pcMat.dispose();
+        lineGeom.dispose(); lineMat.dispose();
+        startGeom.dispose(); startMat.dispose();
+        endGeom.dispose();   endMat.dispose();
+        renderer.dispose();
+      }
+      return { start, stop, dispose, handleResize };
+    }
+
+    // Lazy-init the 3D viewer for a card the first time its canvas becomes visible.
+    async function setup3DCard(canvas) {
+      if (canvas.__viewerInitialized) return;
+      canvas.__viewerInitialized = true;
+      const entry = canvas.__entry;
+      if (!entry) return;
+      const fig = canvas.parentElement;
+      const loading = fig && fig.querySelector('.preds-loading');
+
+      try {
+        const [trajText, pcBuf] = await Promise.all([
+          fetch(`${RESULTS_BASE}${entry.out_name}/trajectory_50pts.txt`)
+            .then(r => r.ok ? r.text() : Promise.reject(r.status)),
+          fetch(`${RESULTS_BASE}${entry.out_name}/pointcloud_small.bin`)
+            .then(r => r.ok ? r.arrayBuffer() : Promise.reject(r.status)),
+        ]);
+        const traj3d = parseTrajectoryText(trajText);
+        const pc     = parsePointCloudBin(pcBuf);
+        if (!pc || !traj3d.length) throw new Error('empty data');
+
+        const viewer = createThreeViewer(canvas, pc, traj3d);
+        canvas.__viewer = viewer;
+        viewer.start();
+        if (loading) loading.remove();
+      } catch (err) {
+        console.warn('3D viewer init failed for', entry.out_name, err);
+        if (loading) loading.textContent = '3D unavailable';
+      }
+    }
+
+    function buildPredCard(entry) {
+      const card = make('article', 'preds-card');
+      const fig  = make('div', 'preds-figure');
+
+      // 3D canvas (initialized lazily when in view).
+      const canvas = document.createElement('canvas');
+      canvas.className = 'preds-canvas';
+      canvas.__entry = entry;
+      fig.appendChild(canvas);
+
+      // Loading state until point cloud arrives.
+      fig.appendChild(make('div', 'preds-loading', 'Loading 3D&hellip;'));
+
+      // RGB input thumbnail — raw input, no prediction overlay.
+      const thumb = make('div', 'preds-thumb');
+      const img = new Image();
+      img.loading = 'lazy';
+      img.alt = entry.instruction || entry.out_name;
+      img.src = `${RESULTS_BASE}${entry.out_name}/rgb.png`;
+      thumb.appendChild(img);
+      fig.appendChild(thumb);
+
+      // "Drag to orbit" hint.
+      fig.appendChild(make('div', 'preds-hint', 'drag to orbit'));
+
+      // Caption: instruction + dataset badge.
+      const cap   = make('div', 'preds-caption');
+      const instr = make('div', 'preds-instr', `&ldquo;${(entry.instruction || '').trim()}&rdquo;`);
+      const meta  = make('div', 'preds-meta');
+      meta.appendChild(make('span', 'preds-badge', datasetLabel(entry.out_name)));
+      cap.appendChild(instr);
+      cap.appendChild(meta);
+
+      card.appendChild(fig);
+      card.appendChild(cap);
+      return card;
+    }
+
+    const predsTrack = document.getElementById('predsTrack');
+    if (predsTrack) {
+      // Lazy-init viewers when their canvas enters the viewport; pause when it leaves.
+      const viewerObserver = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          const canvas = e.target;
+          if (e.isIntersecting) {
+            if (!canvas.__viewerInitialized) setup3DCard(canvas);
+            else canvas.__viewer && canvas.__viewer.start();
+          } else {
+            canvas.__viewer && canvas.__viewer.stop();
+          }
+        });
+      }, { threshold: 0.15 });
+
+      fetch(`${RESULTS_BASE}index.json`)
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(entries => {
+          entries.forEach(e => {
+            const card = buildPredCard(e);
+            predsTrack.appendChild(card);
+            const canvas = card.querySelector('.preds-canvas');
+            if (canvas) viewerObserver.observe(canvas);
+          });
+
+          const predsPrev = document.querySelector('.preds-prev');
+          const predsNext = document.querySelector('.preds-next');
+
+          function predsStep() {
+            const first = predsTrack.querySelector('.preds-card');
+            if (!first) return 0;
+            return first.getBoundingClientRect().width + parseFloat(getComputedStyle(predsTrack).gap || '16');
+          }
+          function scrollPreds(dir = 1) {
+            const step = predsStep();
+            if (!step) return;
+            const max = predsTrack.scrollWidth - predsTrack.clientWidth;
+            const cur = predsTrack.scrollLeft;
+            let target = cur + dir * step;
+            if (dir > 0 && cur >= max - 2) target = 0;
+            if (dir < 0 && cur <= 2) target = max;
+            predsTrack.scrollTo({ left: target, behavior: 'smooth' });
+          }
+          predsPrev.addEventListener('click', () => scrollPreds(-1));
+          predsNext.addEventListener('click', () => scrollPreds(1));
+
+          function updatePredsArrows() {
+            const max = predsTrack.scrollWidth - predsTrack.clientWidth;
+            predsPrev.style.visibility = predsTrack.scrollLeft <= 2 ? 'hidden' : 'visible';
+            predsNext.style.visibility = max <= 2 ? 'hidden' : 'visible';
+          }
+          predsTrack.addEventListener('scroll', updatePredsArrows, { passive: true });
+          window.addEventListener('resize', updatePredsArrows);
+          updatePredsArrows();
+
+          // Drag-to-scroll for the carousel; canvas drags are owned by OrbitControls.
+          let pDown = false, pStartX = 0, pStartScroll = 0;
+          predsTrack.addEventListener('pointerdown', e => {
+            if (e.target.tagName === 'A' || e.target.tagName === 'CANVAS') return;
+            pDown = true; pStartX = e.clientX; pStartScroll = predsTrack.scrollLeft;
+            predsTrack.setPointerCapture(e.pointerId);
+          });
+          predsTrack.addEventListener('pointermove', e => {
+            if (!pDown) return;
+            predsTrack.scrollLeft = pStartScroll - (e.clientX - pStartX);
+          });
+          const pEnd = () => { pDown = false; };
+          predsTrack.addEventListener('pointerup', pEnd);
+          predsTrack.addEventListener('pointerleave', pEnd);
+        })
+        .catch(err => {
+          console.warn('Could not load prediction gallery:', err);
+        });
+
+      // Tab visibility: pause every active viewer when the tab is hidden.
+      document.addEventListener('visibilitychange', () => {
+        const cards = predsTrack.querySelectorAll('.preds-card');
+        cards.forEach(card => {
+          const canvas = card.querySelector('.preds-canvas');
+          const v = canvas && canvas.__viewer;
+          if (!v) return;
+          if (document.hidden) v.stop();
+          // Resuming is handled by IntersectionObserver when the canvas
+          // is still in view; nothing to do here otherwise.
+        });
+      });
+    }
+  })();
+  </script>
+</body>
+</html>
