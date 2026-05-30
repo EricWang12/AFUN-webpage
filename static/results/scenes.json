@@ -1,0 +1,106 @@
+[
+  {
+    "id": "kitchen",
+    "name": "Kitchen",
+    "thumb": "kitchen/use_the_microwave/rgb.png",
+    "queries": [
+      {
+        "id": "kitchen/use_the_microwave",
+        "text": "Use the microwave"
+      },
+      {
+        "id": "kitchen/open_the_refrigerator_door",
+        "text": "Open the refrigerator door"
+      },
+      {
+        "id": "kitchen/open_the_drawer",
+        "text": "Open the drawer"
+      }
+    ]
+  },
+  {
+    "id": "wood_cabinet",
+    "name": "Wood Cabinet",
+    "thumb": "wood_cabinet/open_the_left_cabinet_door/rgb.png",
+    "queries": [
+      {
+        "id": "wood_cabinet/open_the_left_cabinet_door",
+        "text": "Open the left cabinet door"
+      },
+      {
+        "id": "wood_cabinet/open_the_right_cabinet_door",
+        "text": "Open the right cabinet door"
+      },
+      {
+        "id": "wood_cabinet/close_the_left_cabinet_door",
+        "text": "Close the left cabinet door"
+      }
+    ]
+  },
+  {
+    "id": "microwave",
+    "name": "Microwave",
+    "thumb": "microwave/rgb.png",
+    "queries": [
+      {
+        "id": "microwave",
+        "text": "Open the orange microwave on the desktop"
+      }
+    ]
+  },
+  {
+    "id": "toaster",
+    "name": "Toaster",
+    "thumb": "toaster/rgb.png",
+    "queries": [
+      {
+        "id": "toaster",
+        "text": "Push the lever on the toaster downwards"
+      }
+    ]
+  },
+  {
+    "id": "drawer",
+    "name": "Drawer",
+    "thumb": "drawer/rgb.png",
+    "queries": [
+      {
+        "id": "drawer",
+        "text": "Close the open drawer"
+      }
+    ]
+  },
+  {
+    "id": "toaster_oven",
+    "name": "Toaster Oven",
+    "thumb": "toaster_oven/rgb.png",
+    "queries": [
+      {
+        "id": "toaster_oven",
+        "text": "Open the toaster oven door"
+      }
+    ]
+  },
+  {
+    "id": "lid",
+    "name": "Lid",
+    "thumb": "lid/rgb.png",
+    "queries": [
+      {
+        "id": "lid",
+        "text": "Close tool case"
+      }
+    ]
+  },
+  {
+    "id": "pot",
+    "name": "Pot",
+    "thumb": "pot/rgb.png",
+    "queries": [
+      {
+        "id": "pot",
+        "text": "Open the lid of the cap and put it to the left"
+      }
+    ]
+  }
+]

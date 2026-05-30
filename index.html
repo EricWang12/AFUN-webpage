@@ -7,6 +7,10 @@
   <meta name="keywords" content="AFUN, affordance, foundation model, robot manipulation, functionality understanding" />
   <title>AFUN: Towards an Affordance Foundation Model for Functionality Understanding</title>
 
+  <!-- Favicon (University of Michigan) -->
+  <link rel="icon" type="image/x-icon" href="./static/images/umich_favicon.ico" />
+  <link rel="shortcut icon" type="image/x-icon" href="./static/images/umich_favicon.ico" />
+
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet" />
 
@@ -115,24 +119,18 @@
           <div class="afun-pill">
             <div class="afun-pill-stat">SOTA Affordance Segmentation</div>
             <div class="afun-pill-body">
-              <strong>+23.9 / +26.3</strong> mean gIoU/cIoU over the best baseline, across 8 test sets from 4 affordance benchmarks (RAGNet, HOVA-500K, ReasonAFF, InstructPart).
-            </div>
-          </div>
-          <div class="afun-pill">
-            <div class="afun-pill-stat">Functionality with Explicit 3D Motion</div>
-            <div class="afun-pill-body">
-              We represent affordance as a 3D B&eacute;zier-spline curve&mdash;smooth, executable robot trajectories with gripper orientation from the curve tangent.
+              <strong>+23.9 / +26.3</strong> mean gIoU/cIoU over the best baseline, across 8 test sets from 4 affordance benchmarks.
             </div>
           </div>
           <div class="afun-pill">
             <div class="afun-pill-stat">Largest Public Affordance Data</div>
             <div class="afun-pill-body">
-              One of the largest public affordance datasets to date: robot, human egocentric, simulation, and real-world scan data unified in a shared schema.
+              One of the largest public affordance datasets to date: robot, human egocentric, simulation, and real-world scan data.
             </div>
           </div>
         </div>
 
-        <p style="text-align: center;">
+        <p style="text-align: justify;">
           <span style="font-size: 1.15em;">
           We present <strong>AFUN</strong>, a step toward an affordance foundation model for functionality understanding. From a single RGB-D observation and a language task description, AFUN predicts a task-conditional functional mask (<em>where</em> to interact) and a 3D post-contact motion curve (<em>how</em> to interact). To support open-world generalization, we build a large-scale standardized data pipeline that converts heterogeneous robot, human, simulation, and real-world scan data into a shared affordance schema with language, masks, and object-centric 3D motion labels.
           </span>
@@ -143,6 +141,7 @@
 
 
   <!-- Abstract -->
+  <!--
   <section class="section" id="abstract">
     <div class="container is-max-desktop">
       <div class="columns is-centered has-text-centered">
@@ -164,16 +163,17 @@
     </div>
     <br>
   </section>
+  -->
 
 
-  <!-- Prediction Gallery (interactive 3D viewer per card) -->
+  <!-- Prediction Results (scene + query selectors, single interactive viewer) -->
   <section class="section" id="predictions">
     <div class="container is-max-widescreen">
       <div class="columns is-centered has-text-centered">
         <div class="column is-full">
-          <h2 class="title is-3">Prediction Gallery</h2>
+          <h2 class="title is-3">Prediction Results</h2>
           <p class="has-text-centered" style="margin-bottom: 0.25rem; color:#555;">
-            AFUN predictions across diverse scenes. Each card embeds the input RGB (inset) and the predicted 3D motion overlaid on the scene point cloud&mdash;<em>drag</em> to orbit, <em>scroll</em> to zoom.
+            AFUN predictions across diverse scenes. Pick a <strong>scene</strong> below, then choose a <strong>language query</strong> to see the matching prediction. Points inside the predicted affordance mask are highlighted in <span style="color:#E53935; font-weight:600;">red</span>, and the trajectory threads from yellow (contact) to blue (end). <em>drag</em> to orbit, <em>scroll</em> to zoom.
           </p>
           <p class="has-text-centered preds-legend-wrap" style="margin-bottom: 0.75rem;">
             <span class="preds-legend">
@@ -183,10 +183,27 @@
             </span>
           </p>
 
-          <div class="preds-gallery" role="region" aria-label="AFUN prediction gallery">
-            <button class="preds-nav preds-prev" aria-label="Previous prediction">&lsaquo;</button>
-            <div class="preds-track" id="predsTrack" aria-live="polite"></div>
-            <button class="preds-nav preds-next" aria-label="Next prediction">&rsaquo;</button>
+          <!-- Scene selector (horizontal thumbnail strip) -->
+          <div class="preds-scene-strip" id="predsSceneStrip" role="tablist" aria-label="Scenes"></div>
+
+          <!-- Main viewer for the currently selected (scene, query) -->
+          <div class="preds-viewer" id="predsViewer" role="region" aria-live="polite">
+            <div class="preds-viewer-figure">
+              <canvas class="preds-canvas" id="predsCanvas"></canvas>
+              <div class="preds-loading" id="predsLoading">Loading 3D&hellip;</div>
+              <div class="preds-thumb">
+                <img id="predsThumbImg" alt="Input RGB" />
+              </div>
+              <div class="preds-hint">drag to orbit</div>
+            </div>
+
+            <div class="preds-viewer-caption">
+              <div class="preds-scene-name" id="predsSceneName"></div>
+              <div class="preds-instr"     id="predsInstr"></div>
+            </div>
+
+            <!-- Query selector (shown only when the scene has &gt; 1 query) -->
+            <div class="preds-query-bar" id="predsQueryBar" role="tablist" aria-label="Text queries"></div>
           </div>
         </div>
       </div>
@@ -513,28 +530,9 @@
     //   rgb.png, trajectory_50pts.txt, pointcloud_small.bin
     // Master manifest at ./static/results/index.json — add an entry to expand.
     //
-    // For new datasets, also add a key to DATASET_LABELS below to get a tidy badge.
     // Regenerate pointcloud_small.bin via scripts/preprocess_pointclouds.py.
 
     const RESULTS_BASE = './static/results/';
-    const DATASET_LABELS = {
-      agibot:    'AgiBot',
-      droid:     'DROID',
-      robomind2: 'RoboMIND-v2',
-      robomind:  'RoboMIND',
-      ego4d:     'Ego4D',
-      epic:      'Epic-Kitchens',
-      scenefun3d:'SceneFun3D',
-      calvin:    'Calvin',
-      ours:      'AFUN test set',
-    };
-    function datasetLabel(outName) {
-      const lower = (outName || '').toLowerCase();
-      for (const key of Object.keys(DATASET_LABELS)) {
-        if (lower.includes(key)) return DATASET_LABELS[key];
-      }
-      return (outName || '').replace(/^\d+_?/, '').replace(/_/g, ' ');
-    }
 
     // Yellow -> blue gradient for the trajectory.
     const TRAJ_START = [255, 234, 0];   // #FFEA00
@@ -546,14 +544,6 @@
       Math.round(lerp(c1[2], c2[2], t)),
     ];
 
-    // Pinhole projection (camera frame -> pixel) for the RGB thumbnail overlay.
-    function project3Dto2D(p, K) {
-      const X = p[0], Y = p[1], Z = p[2];
-      if (!(Z > 0)) return null;
-      const fx = K[0][0], fy = K[1][1], cx = K[0][2], cy = K[1][2];
-      return [(X / Z) * fx + cx, (Y / Z) * fy + cy];
-    }
-
     function parseTrajectoryText(text) {
       return text.split('\n').map(line => {
         const s = line.trim();
@@ -564,69 +554,26 @@
       }).filter(Boolean);
     }
 
-    // pointcloud_small.bin layout: uint32 N, then float32[N*3] xyz, then uint8[N*3] rgb.
+    // pointcloud_small.bin layout (produced by scripts/preprocess_pointclouds.py):
+    //   uint32  N
+    //   float32 positions[N, 3]
+    //   uint8   colors[N, 3]
+    //   uint8   mask_flag[N]      (1 = point inside the predicted affordance mask)
+    // The mask_flag block is optional for backward compatibility: older bins
+    // with no mask block parse with an all-zero mask array.
     function parsePointCloudBin(buf) {
       if (!buf || buf.byteLength < 4) return null;
       const view = new DataView(buf);
       const N = view.getUint32(0, true);
-      if (N === 0 || buf.byteLength < 4 + N * (12 + 3)) return null;
+      const minSize = 4 + N * (12 + 3);
+      if (N === 0 || buf.byteLength < minSize) return null;
       const positions = new Float32Array(buf, 4, N * 3).slice();
       const colors    = new Uint8Array(buf, 4 + N * 12, N * 3).slice();
-      return { N, positions, colors };
-    }
-
-    function buildOverlaySVG(traj2d, W, H) {
-      const svgNS = 'http://www.w3.org/2000/svg';
-      const svg = document.createElementNS(svgNS, 'svg');
-      svg.classList.add('preds-overlay');
-      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-      svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
-
-      if (traj2d.length < 2) return svg;
-
-      // Stroke widths scale with image size so the line is visible at any res.
-      const haloW   = Math.max(4,   Math.round(Math.min(W, H) * 0.012));
-      const lineW   = Math.max(2.5, Math.round(Math.min(W, H) * 0.008));
-      const markerR = Math.max(4,   Math.round(Math.min(W, H) * 0.014));
-
-      const N = traj2d.length;
-      for (let i = 0; i < N - 1; i++) {
-        const l = document.createElementNS(svgNS, 'line');
-        l.setAttribute('x1', traj2d[i][0]);   l.setAttribute('y1', traj2d[i][1]);
-        l.setAttribute('x2', traj2d[i+1][0]); l.setAttribute('y2', traj2d[i+1][1]);
-        l.setAttribute('stroke', 'rgba(255,255,255,0.9)');
-        l.setAttribute('stroke-width', haloW);
-        l.setAttribute('stroke-linecap', 'round');
-        svg.appendChild(l);
-      }
-      for (let i = 0; i < N - 1; i++) {
-        const t = i / (N - 2);
-        const c = lerpRGB(TRAJ_START, TRAJ_END, t);
-        const l = document.createElementNS(svgNS, 'line');
-        l.setAttribute('x1', traj2d[i][0]);   l.setAttribute('y1', traj2d[i][1]);
-        l.setAttribute('x2', traj2d[i+1][0]); l.setAttribute('y2', traj2d[i+1][1]);
-        l.setAttribute('stroke', `rgb(${c[0]},${c[1]},${c[2]})`);
-        l.setAttribute('stroke-width', lineW);
-        l.setAttribute('stroke-linecap', 'round');
-        svg.appendChild(l);
-      }
-      const start = document.createElementNS(svgNS, 'circle');
-      start.setAttribute('cx', traj2d[0][0]);
-      start.setAttribute('cy', traj2d[0][1]);
-      start.setAttribute('r', markerR);
-      start.setAttribute('fill', `rgb(${TRAJ_START.join(',')})`);
-      start.setAttribute('stroke', 'rgba(255,255,255,0.95)');
-      start.setAttribute('stroke-width', Math.max(1.5, markerR * 0.35));
-      svg.appendChild(start);
-      const end = document.createElementNS(svgNS, 'circle');
-      end.setAttribute('cx', traj2d[N-1][0]);
-      end.setAttribute('cy', traj2d[N-1][1]);
-      end.setAttribute('r', Math.max(3, markerR * 0.7));
-      end.setAttribute('fill', `rgb(${TRAJ_END.join(',')})`);
-      end.setAttribute('stroke', 'rgba(255,255,255,0.95)');
-      end.setAttribute('stroke-width', Math.max(1.2, markerR * 0.3));
-      svg.appendChild(end);
-      return svg;
+      const hasMask = buf.byteLength >= minSize + N;
+      const mask = hasMask
+        ? new Uint8Array(buf, 4 + N * 12 + N * 3, N).slice()
+        : new Uint8Array(N);
+      return { N, positions, colors, mask };
     }
 
     // ---- Three.js viewer (per card) ----
@@ -722,8 +669,22 @@
       // Point cloud as colored points.
       const pcGeom = new THREE.BufferGeometry();
       pcGeom.setAttribute('position', new THREE.BufferAttribute(pc.positions, 3));
+      // Build vertex colors. Points inside the predicted affordance mask are
+      // recolored red so the user can see which 3D region the mask covers.
+      // Non-masked points keep their original RGB.
+      const MASK_R = 1.00, MASK_G = 0.18, MASK_B = 0.18;  // vivid red
       const colorsFloat = new Float32Array(N * 3);
-      for (let i = 0; i < N * 3; i++) colorsFloat[i] = pc.colors[i] / 255;
+      for (let i = 0; i < N; i++) {
+        if (pc.mask && pc.mask[i]) {
+          colorsFloat[i*3]   = MASK_R;
+          colorsFloat[i*3+1] = MASK_G;
+          colorsFloat[i*3+2] = MASK_B;
+        } else {
+          colorsFloat[i*3]   = pc.colors[i*3]   / 255;
+          colorsFloat[i*3+1] = pc.colors[i*3+1] / 255;
+          colorsFloat[i*3+2] = pc.colors[i*3+2] / 255;
+        }
+      }
       pcGeom.setAttribute('color', new THREE.BufferAttribute(colorsFloat, 3));
       // Screen-pixel-constant point size (sizeAttenuation: false).
       // Previously we sized in world units with perspective attenuation,
@@ -751,14 +712,22 @@
       const lineGeom = new LineGeometry();
       lineGeom.setPositions(trajPositions);
       lineGeom.setColors(trajColors);
+      // Trajectory line + endpoint spheres are drawn AFTER everything else
+      // and with depthTest disabled so they're always visible from the
+      // camera, even when occluded by point-cloud geometry. renderOrder=2
+      // puts them strictly after the point cloud (renderOrder=0 default).
       const lineMat = new LineMaterial({
         vertexColors: true,
         linewidth: 4,
         resolution: new THREE.Vector2(w, h),
         worldUnits: false,
+        depthTest:  false,
+        depthWrite: false,
+        transparent: true,   // required so Three.js respects renderOrder for sorting
       });
       const line = new Line2(lineGeom, lineMat);
       line.computeLineDistances();
+      line.renderOrder = 2;
       scene.add(line);
 
       // Start/end markers — sized proportional to the trajectory (so they
@@ -766,17 +735,29 @@
       // remain visible from the initial camera distance.
       const startRadius = Math.max(trajDiag * 0.055, cameraDist * 0.013);
       const endRadius   = Math.max(trajDiag * 0.04,  cameraDist * 0.009);
-      const startMat  = new THREE.MeshBasicMaterial({ color: 0xFFEA00 });
+      const startMat  = new THREE.MeshBasicMaterial({
+        color: 0xFFEA00,
+        depthTest:  false,
+        depthWrite: false,
+        transparent: true,
+      });
       const startGeom = new THREE.SphereGeometry(startRadius, 16, 12);
       const startMesh = new THREE.Mesh(startGeom, startMat);
       startMesh.position.set(traj3d[0][0], traj3d[0][1], traj3d[0][2]);
+      startMesh.renderOrder = 3;
       scene.add(startMesh);
 
-      const endMat  = new THREE.MeshBasicMaterial({ color: 0x1976D2 });
+      const endMat  = new THREE.MeshBasicMaterial({
+        color: 0x1976D2,
+        depthTest:  false,
+        depthWrite: false,
+        transparent: true,
+      });
       const endGeom = new THREE.SphereGeometry(endRadius, 16, 12);
       const endMesh = new THREE.Mesh(endGeom, endMat);
       const ep = traj3d[traj3d.length - 1];
       endMesh.position.set(ep[0], ep[1], ep[2]);
+      endMesh.renderOrder = 3;
       scene.add(endMesh);
 
       // Render loop — only ticks while running.
@@ -823,159 +804,185 @@
       return { start, stop, dispose, handleResize };
     }
 
-    // Lazy-init the 3D viewer for a card the first time its canvas becomes visible.
-    async function setup3DCard(canvas) {
-      if (canvas.__viewerInitialized) return;
-      canvas.__viewerInitialized = true;
-      const entry = canvas.__entry;
-      if (!entry) return;
-      const fig = canvas.parentElement;
-      const loading = fig && fig.querySelector('.preds-loading');
+    // ---- Single-viewer controller driven by scene + query selectors ----
+    // Layout:
+    //   - scenes.json describes scenes; each has 1+ queries pointing at entry_ids
+    //   - on scene change: rebuild the query pill bar, switch to its first query
+    //   - on query change: dispose the previous Three.js viewer, fetch the new
+    //     entry's trajectory + point cloud, reinit the viewer in the same canvas.
+    // Falls back to legacy index.json (flat entries) when scenes.json is absent.
 
+    const sceneStrip   = document.getElementById('predsSceneStrip');
+    const queryBar     = document.getElementById('predsQueryBar');
+    const sceneNameEl  = document.getElementById('predsSceneName');
+    const instrEl      = document.getElementById('predsInstr');
+    const thumbImg     = document.getElementById('predsThumbImg');
+    const canvasEl     = document.getElementById('predsCanvas');
+    const loadingEl    = document.getElementById('predsLoading');
+    const figureEl     = canvasEl && canvasEl.parentElement;
+
+    let state = { scenes: [], sceneIdx: 0, queryIdx: 0, viewer: null, loadToken: 0 };
+
+    function disposeCurrentViewer() {
+      if (state.viewer) {
+        try { state.viewer.dispose(); } catch (_) {}
+        state.viewer = null;
+      }
+    }
+
+    async function loadEntry(entryId) {
+      // Guard against rapid clicks: only the most-recent load may commit.
+      const myToken = ++state.loadToken;
+      disposeCurrentViewer();
+      if (figureEl) figureEl.classList.add('is-loading');
+      if (loadingEl) {
+        loadingEl.textContent = 'Loading 3D…';
+        loadingEl.style.display = 'flex';
+      }
       try {
         const [trajText, pcBuf] = await Promise.all([
-          fetch(`${RESULTS_BASE}${entry.out_name}/trajectory_50pts.txt`)
+          fetch(`${RESULTS_BASE}${entryId}/trajectory_50pts.txt`)
             .then(r => r.ok ? r.text() : Promise.reject(r.status)),
-          fetch(`${RESULTS_BASE}${entry.out_name}/pointcloud_small.bin`)
+          fetch(`${RESULTS_BASE}${entryId}/pointcloud_small.bin`)
             .then(r => r.ok ? r.arrayBuffer() : Promise.reject(r.status)),
         ]);
+        if (myToken !== state.loadToken) return;   // a newer load has started
         const traj3d = parseTrajectoryText(trajText);
         const pc     = parsePointCloudBin(pcBuf);
         if (!pc || !traj3d.length) throw new Error('empty data');
 
-        const viewer = createThreeViewer(canvas, pc, traj3d);
-        canvas.__viewer = viewer;
-        viewer.start();
-        if (loading) loading.remove();
+        state.viewer = createThreeViewer(canvasEl, pc, traj3d);
+        state.viewer.start();
+        if (figureEl) figureEl.classList.remove('is-loading');
+        if (loadingEl) loadingEl.style.display = 'none';
       } catch (err) {
-        console.warn('3D viewer init failed for', entry.out_name, err);
-        if (loading) loading.textContent = '3D unavailable';
+        if (myToken !== state.loadToken) return;
+        console.warn('3D viewer init failed for', entryId, err);
+        if (loadingEl) {
+          loadingEl.textContent = '3D unavailable';
+          loadingEl.style.display = 'flex';
+        }
       }
     }
 
-    function buildPredCard(entry) {
-      const card = make('article', 'preds-card');
-      const fig  = make('div', 'preds-figure');
+    function selectQuery(qIdx) {
+      const scene = state.scenes[state.sceneIdx];
+      if (!scene) return;
+      state.queryIdx = qIdx;
+      const q = scene.queries[qIdx];
 
-      // 3D canvas (initialized lazily when in view).
-      const canvas = document.createElement('canvas');
-      canvas.className = 'preds-canvas';
-      canvas.__entry = entry;
-      fig.appendChild(canvas);
+      // Update caption.
+      sceneNameEl.textContent = scene.name || '';
+      instrEl.textContent     = `“${(q.text || '').trim()}”`;
+      // Swap RGB thumb. (For multi-query scenes the RGB is the same scene image;
+      // we just point at the chosen entry's rgb.png for simplicity.)
+      thumbImg.src = `${RESULTS_BASE}${q.id}/rgb.png`;
+      thumbImg.alt = q.text || q.id;
 
-      // Loading state until point cloud arrives.
-      fig.appendChild(make('div', 'preds-loading', 'Loading 3D&hellip;'));
+      // Update pill aria-selected state.
+      queryBar.querySelectorAll('.preds-query-pill').forEach((btn, i) => {
+        btn.setAttribute('aria-selected', i === qIdx ? 'true' : 'false');
+        btn.tabIndex = i === qIdx ? 0 : -1;
+      });
 
-      // RGB input thumbnail — raw input, no prediction overlay.
-      const thumb = make('div', 'preds-thumb');
-      const img = new Image();
-      img.loading = 'lazy';
-      img.alt = entry.instruction || entry.out_name;
-      img.src = `${RESULTS_BASE}${entry.out_name}/rgb.png`;
-      thumb.appendChild(img);
-      fig.appendChild(thumb);
-
-      // "Drag to orbit" hint.
-      fig.appendChild(make('div', 'preds-hint', 'drag to orbit'));
-
-      // Caption: instruction + dataset badge.
-      const cap   = make('div', 'preds-caption');
-      const instr = make('div', 'preds-instr', `&ldquo;${(entry.instruction || '').trim()}&rdquo;`);
-      const meta  = make('div', 'preds-meta');
-      meta.appendChild(make('span', 'preds-badge', datasetLabel(entry.out_name)));
-      cap.appendChild(instr);
-      cap.appendChild(meta);
-
-      card.appendChild(fig);
-      card.appendChild(cap);
-      return card;
+      loadEntry(q.id);
     }
 
-    const predsTrack = document.getElementById('predsTrack');
-    if (predsTrack) {
-      // Lazy-init viewers when their canvas enters the viewport; pause when it leaves.
-      const viewerObserver = new IntersectionObserver((entries) => {
-        entries.forEach(e => {
-          const canvas = e.target;
-          if (e.isIntersecting) {
-            if (!canvas.__viewerInitialized) setup3DCard(canvas);
-            else canvas.__viewer && canvas.__viewer.start();
-          } else {
-            canvas.__viewer && canvas.__viewer.stop();
-          }
-        });
-      }, { threshold: 0.15 });
+    function selectScene(sIdx, { scrollChip } = {}) {
+      const scene = state.scenes[sIdx];
+      if (!scene) return;
+      state.sceneIdx = sIdx;
 
-      fetch(`${RESULTS_BASE}index.json`)
+      // Update scene-chip aria-selected.
+      sceneStrip.querySelectorAll('.preds-scene-chip').forEach((btn, i) => {
+        btn.setAttribute('aria-selected', i === sIdx ? 'true' : 'false');
+      });
+
+      // Rebuild query pills.
+      queryBar.innerHTML = '';
+      if (scene.queries.length > 1) {
+        scene.queries.forEach((q, i) => {
+          const pill = make('button', 'preds-query-pill');
+          pill.type = 'button';
+          pill.setAttribute('role', 'tab');
+          pill.setAttribute('aria-selected', 'false');
+          pill.textContent = q.text || q.id;
+          pill.addEventListener('click', () => selectQuery(i));
+          queryBar.appendChild(pill);
+        });
+      }
+      selectQuery(0);
+
+      // Keep the active chip centered in the strip — but only on a user click.
+      // (On the initial load the gallery is below the fold; scrolling it into
+      // view would yank the whole page down.) scrollIntoView with inline:'center'
+      // can still nudge the page vertically, so we scroll the strip directly.
+      if (scrollChip) {
+        const chip = sceneStrip.querySelectorAll('.preds-scene-chip')[sIdx];
+        if (chip) {
+          const target = chip.offsetLeft - (sceneStrip.clientWidth - chip.clientWidth) / 2;
+          sceneStrip.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+        }
+      }
+    }
+
+    function buildSceneChip(scene, idx) {
+      const btn = make('button', 'preds-scene-chip');
+      btn.type = 'button';
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', 'false');
+
+      const thumb = make('div', 'preds-scene-chip-thumb');
+      const img = new Image();
+      img.loading = 'lazy';
+      img.alt = scene.name || scene.id;
+      img.src = `${RESULTS_BASE}${scene.thumb || (scene.queries[0] && (scene.queries[0].id + '/rgb.png'))}`;
+      thumb.appendChild(img);
+
+      // Query-count badge on every card (singular / plural).
+      const nq = scene.queries.length;
+      thumb.appendChild(make('span', 'preds-scene-chip-badge', `${nq} ${nq === 1 ? 'query' : 'queries'}`));
+
+      // Scene name overlaid on a gradient scrim at the bottom of the thumbnail.
+      thumb.appendChild(make('span', 'preds-scene-chip-name', scene.name || scene.id));
+
+      btn.appendChild(thumb);
+      btn.addEventListener('click', () => selectScene(idx, { scrollChip: true }));
+      return btn;
+    }
+
+    function initGallery(scenes) {
+      // Build chips from the filtered list so chip index i === state.scenes[i]
+      // (selectScene/selectQuery both index into state.scenes).
+      state.scenes = scenes.filter(s => s && s.queries && s.queries.length);
+      if (!state.scenes.length) return;
+      state.scenes.forEach((s, i) => sceneStrip.appendChild(buildSceneChip(s, i)));
+      selectScene(0);
+    }
+
+    // Prefer scenes.json (new grouped layout). Fall back to legacy index.json:
+    // each flat entry becomes a one-query scene so the UI still works.
+    if (sceneStrip && canvasEl) {
+      fetch(`${RESULTS_BASE}scenes.json`)
         .then(r => r.ok ? r.json() : Promise.reject(r.status))
-        .then(entries => {
-          entries.forEach(e => {
-            const card = buildPredCard(e);
-            predsTrack.appendChild(card);
-            const canvas = card.querySelector('.preds-canvas');
-            if (canvas) viewerObserver.observe(canvas);
-          });
+        .catch(() =>
+          fetch(`${RESULTS_BASE}index.json`)
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .then(entries => entries.map(e => ({
+              id: e.out_name,
+              name: e.out_name,
+              thumb: `${e.out_name}/rgb.png`,
+              queries: [{ id: e.out_name, text: e.instruction || e.out_name }],
+            })))
+        )
+        .then(initGallery)
+        .catch(err => console.warn('Could not load prediction gallery:', err));
 
-          const predsPrev = document.querySelector('.preds-prev');
-          const predsNext = document.querySelector('.preds-next');
-
-          function predsStep() {
-            const first = predsTrack.querySelector('.preds-card');
-            if (!first) return 0;
-            return first.getBoundingClientRect().width + parseFloat(getComputedStyle(predsTrack).gap || '16');
-          }
-          function scrollPreds(dir = 1) {
-            const step = predsStep();
-            if (!step) return;
-            const max = predsTrack.scrollWidth - predsTrack.clientWidth;
-            const cur = predsTrack.scrollLeft;
-            let target = cur + dir * step;
-            if (dir > 0 && cur >= max - 2) target = 0;
-            if (dir < 0 && cur <= 2) target = max;
-            predsTrack.scrollTo({ left: target, behavior: 'smooth' });
-          }
-          predsPrev.addEventListener('click', () => scrollPreds(-1));
-          predsNext.addEventListener('click', () => scrollPreds(1));
-
-          function updatePredsArrows() {
-            const max = predsTrack.scrollWidth - predsTrack.clientWidth;
-            predsPrev.style.visibility = predsTrack.scrollLeft <= 2 ? 'hidden' : 'visible';
-            predsNext.style.visibility = max <= 2 ? 'hidden' : 'visible';
-          }
-          predsTrack.addEventListener('scroll', updatePredsArrows, { passive: true });
-          window.addEventListener('resize', updatePredsArrows);
-          updatePredsArrows();
-
-          // Drag-to-scroll for the carousel; canvas drags are owned by OrbitControls.
-          let pDown = false, pStartX = 0, pStartScroll = 0;
-          predsTrack.addEventListener('pointerdown', e => {
-            if (e.target.tagName === 'A' || e.target.tagName === 'CANVAS') return;
-            pDown = true; pStartX = e.clientX; pStartScroll = predsTrack.scrollLeft;
-            predsTrack.setPointerCapture(e.pointerId);
-          });
-          predsTrack.addEventListener('pointermove', e => {
-            if (!pDown) return;
-            predsTrack.scrollLeft = pStartScroll - (e.clientX - pStartX);
-          });
-          const pEnd = () => { pDown = false; };
-          predsTrack.addEventListener('pointerup', pEnd);
-          predsTrack.addEventListener('pointerleave', pEnd);
-        })
-        .catch(err => {
-          console.warn('Could not load prediction gallery:', err);
-        });
-
-      // Tab visibility: pause every active viewer when the tab is hidden.
+      // Pause the viewer when the tab is hidden; resume on visibility return.
       document.addEventListener('visibilitychange', () => {
-        const cards = predsTrack.querySelectorAll('.preds-card');
-        cards.forEach(card => {
-          const canvas = card.querySelector('.preds-canvas');
-          const v = canvas && canvas.__viewer;
-          if (!v) return;
-          if (document.hidden) v.stop();
-          // Resuming is handled by IntersectionObserver when the canvas
-          // is still in view; nothing to do here otherwise.
-        });
+        if (!state.viewer) return;
+        if (document.hidden) state.viewer.stop();
+        else state.viewer.start();
       });
     }
   })();

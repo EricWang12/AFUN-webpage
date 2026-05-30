@@ -1,55 +1,70 @@
-# Cherry-picked AFUN results
+# AFUN prediction results (web gallery)
 
-Three representative samples exported from the cherry-pick set
-(`eval_3d/qual_rows/selected/combined_withgt.json`, kept under `Ours-106800`).
+Data behind the **Prediction Results** section of the site. The gallery reads
+`scenes.json`; everything else here is the per-query payload it fetches.
 
-| Folder | Source dataset | Instruction | RGB resolution |
-|---|---|---|---|
-| `01_agibot_drawer/` | AgiBot (egocentric) | "Open the orange microwave on the desktop." | 640 x 480 |
-| `02_droid_real_robot/` | DROID (real robot) | "Push the lever on the toaster downwards." | 1280 x 720 |
-| `03_robomind2_open_oven/` | RoboMIND-v2 | "open oven" | 640 x 480 |
+## Layout
 
-## Files in each sample folder
-
-Inputs:
-- `rgb.png` — input RGB image (`obs_frame.png` from the dataset).
-- `depth.npy` — float32 depth map in meters, shape `(H, W)`. Invalid pixels are 0.
-- `intrinsics.json` — `K` (3x3), `fx/fy/cx/cy`, and image height/width.
-- `instruction.txt` — language task description.
-- `gt_mask.png` — ground-truth affordance mask (when available).
-
-Point cloud (back-projected from RGB-D using `K`):
-- `point_cloud.ply` — binary PLY with per-vertex RGB color.
-- `point_cloud.npz` — same data as `{points_xyz: float32 (N,3), colors_rgb: uint8 (N,3)}`.
-
-AFUN prediction (model: `Ours-106800`, i.e. `p0.84-robot-sonata-geo-combined_v3` step 106800):
-- `trajectory_50pts.txt` — 50 predicted 3D points in the camera frame (meters), one `x y z` per line.
-- `trajectory_50pts.npy` — same `(50, 3)` float32 array.
-- `prediction.npz` — full raw prediction (trajectory, mask, contact point, spline control points, score).
-- `prediction_meta.json` — extracted scalars/lists from `prediction.npz` (contact point, motion type, score, spline control points, r0).
-
-Optional:
-- `viz_3d_interactive.html` — standalone Plotly viewer with the point cloud + 50-point trajectory.
-
-`index.json` (top level) — machine-readable summary of all 3 samples.
-
-## Reproducing the point cloud from the inputs
-
-```python
-import json, numpy as np
-from PIL import Image
-
-rgb = np.array(Image.open('rgb.png').convert('RGB'))
-depth = np.load('depth.npy')                       # (H, W) float32, meters
-K = np.array(json.load(open('intrinsics.json'))['K'])
-
-H, W = depth.shape
-ys, xs = np.mgrid[0:H, 0:W]
-z = depth
-m = (z > 0) & np.isfinite(z) & (z < 5.0)
-fx, fy, cx, cy = K[0,0], K[1,1], K[0,2], K[1,2]
-X = (xs - cx) / fx * z
-Y = (ys - cy) / fy * z
-pts = np.stack([X[m], Y[m], z[m]], axis=1)         # (N, 3)
-cols = rgb[m]                                       # (N, 3) uint8
 ```
+scenes.json                     # manifest the gallery loads (scenes -> queries)
+<scene>/                        # single-query scene: the 3 files live here
+    rgb.png
+    pointcloud_small.bin
+    trajectory_50pts.txt
+<scene>/<query>/                # multi-query scene: one subfolder per query
+    rgb.png
+    pointcloud_small.bin
+    trajectory_50pts.txt
+```
+
+Current scenes: `kitchen` and `wood_cabinet` are multi-query; `microwave`,
+`toaster`, `drawer`, `toaster_oven`, `lid`, `pot` are single-query.
+
+## The three files the site uses
+
+Per query, the in-browser viewer fetches only:
+
+- `rgb.png` — input RGB (shown as the inset thumbnail + scene-card image).
+- `pointcloud_small.bin` — downsampled cloud the WebGL viewer renders. Layout:
+  `uint32 N`, `float32 positions[N,3]`, `uint8 colors[N,3]`, `uint8 mask_flag[N]`
+  (`1` = inside the predicted affordance mask, recolored red). See
+  `scripts/preprocess_pointclouds.py`.
+- `trajectory_50pts.txt` — 50 predicted 3D points (camera frame, meters), one
+  `x y z` per line; rendered yellow→blue.
+
+## scenes.json
+
+```jsonc
+[
+  {
+    "id": "kitchen",                 // also the folder name
+    "name": "Kitchen",               // label shown on the scene card
+    "thumb": "kitchen/use_the_microwave/rgb.png",
+    "queries": [
+      { "id": "kitchen/use_the_microwave", "text": "Use the microwave" },
+      ...
+    ]
+  },
+  { "id": "microwave", "name": "Microwave", "thumb": "microwave/rgb.png",
+    "queries": [ { "id": "microwave", "text": "Open the orange microwave..." } ] }
+]
+```
+
+`id` is the path (relative to this folder) of the directory holding the three
+files — so single-query scenes point at the scene folder, multi-query queries at
+a `<scene>/<query>` subfolder.
+
+## Adding results
+
+1. Import a prediction with `scripts/import_eval_real.py` (eval_real format) or
+   `scripts/import_generated_dual.py` (generated_dual format). These write a flat
+   per-entry folder with the full payload (depth, point_cloud.npz, prediction.npz,
+   intrinsics, …).
+2. Keep the three web files in the `<scene>/[<query>/]` location above; the rest
+   of the raw payload is not served — move it to `archive/results/` (where the
+   original full exports already live) to keep this folder light.
+3. Add or extend the scene's entry in `scenes.json`.
+
+The raw inputs/predictions for every current scene are preserved under
+`archive/results/<original_entry_name>/` (depth, point clouds, `prediction.npz`,
+ground-truth masks, standalone Plotly viewers, and the legacy flat `index.json`).
