@@ -911,7 +911,9 @@
           queryBar.appendChild(pill);
         });
       }
-      selectQuery(0);
+      // Open on the scene's default query if one is flagged, else the first.
+      const dq = scene.queries.findIndex(q => q.default);
+      selectQuery(dq >= 0 ? dq : 0);
 
       // Keep the active chip centered in the strip — but only on a user click.
       // (On the initial load the gallery is below the fold; scrolling it into
@@ -957,7 +959,9 @@
       state.scenes = scenes.filter(s => s && s.queries && s.queries.length);
       if (!state.scenes.length) return;
       state.scenes.forEach((s, i) => sceneStrip.appendChild(buildSceneChip(s, i)));
-      selectScene(0);
+      // Land on the scene flagged "default" in scenes.json, else the first one.
+      const di = state.scenes.findIndex(s => s.default);
+      selectScene(di >= 0 ? di : 0);
     }
 
     // Prefer scenes.json (new grouped layout). Fall back to legacy index.json:

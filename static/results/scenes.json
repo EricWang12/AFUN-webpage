@@ -22,10 +22,12 @@
     "id": "wood_cabinet",
     "name": "Wood Cabinet",
     "thumb": "wood_cabinet/open_the_left_cabinet_door/rgb.png",
+    "default": true,
     "queries": [
       {
         "id": "wood_cabinet/open_the_left_cabinet_door",
-        "text": "Open the left cabinet door"
+        "text": "Open the left cabinet door",
+        "default": true
       },
       {
         "id": "wood_cabinet/open_the_right_cabinet_door",
@@ -38,13 +40,28 @@
     ]
   },
   {
-    "id": "microwave",
-    "name": "Microwave",
-    "thumb": "microwave/rgb.png",
+    "id": "console",
+    "name": "Console",
+    "thumb": "console/pull_the_handbrake_lever_up/rgb.png",
     "queries": [
       {
-        "id": "microwave",
-        "text": "Open the orange microwave on the desktop"
+        "id": "console/pull_the_handbrake_lever_up",
+        "text": "Pull the handbrake lever up"
+      },
+      {
+        "id": "console/shift_the_gear_lever_into_drive_gear",
+        "text": "Shift the gear lever into Drive gear"
+      }
+    ]
+  },
+  {
+    "id": "toaster_oven",
+    "name": "Toaster Oven",
+    "thumb": "toaster_oven/rgb.png",
+    "queries": [
+      {
+        "id": "toaster_oven",
+        "text": "Open the toaster oven door"
       }
     ]
   },
@@ -71,17 +88,6 @@
     ]
   },
   {
-    "id": "toaster_oven",
-    "name": "Toaster Oven",
-    "thumb": "toaster_oven/rgb.png",
-    "queries": [
-      {
-        "id": "toaster_oven",
-        "text": "Open the toaster oven door"
-      }
-    ]
-  },
-  {
     "id": "lid",
     "name": "Lid",
     "thumb": "lid/rgb.png",
@@ -100,6 +106,17 @@
       {
         "id": "pot",
         "text": "Open the lid of the cap and put it to the left"
+      }
+    ]
+  },
+  {
+    "id": "microwave",
+    "name": "Microwave",
+    "thumb": "microwave/rgb.png",
+    "queries": [
+      {
+        "id": "microwave",
+        "text": "Open the orange microwave on the desktop"
       }
     ]
   }
