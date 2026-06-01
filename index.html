@@ -111,7 +111,7 @@
         <!-- Highlight pills: instant takeaways -->
         <div class="afun-pills">
           <div class="afun-pill">
-            <div class="afun-pill-stat">Where + How, Jointly</div>
+            <div class="afun-pill-stat">Where + How for Functionality Understanding</div>
             <div class="afun-pill-body">
               A single forward pass predicts both a task-conditional functional mask (<em>where</em> to interact) and a 3D post-contact motion curve (<em>how</em> to interact).
             </div>
@@ -166,14 +166,14 @@
   -->
 
 
-  <!-- Prediction Results (scene + query selectors, single interactive viewer) -->
+  <!-- Prediction Results (scene selector; all queries shown at once) -->
   <section class="section" id="predictions">
     <div class="container is-max-widescreen">
       <div class="columns is-centered has-text-centered">
         <div class="column is-full">
           <h2 class="title is-3">Prediction Results</h2>
           <p class="has-text-centered" style="margin-bottom: 0.25rem; color:#555;">
-            AFUN predictions across diverse scenes. Pick a <strong>scene</strong> below, then choose a <strong>language query</strong> to see the matching prediction. Points inside the predicted affordance mask are highlighted in <span style="color:#E53935; font-weight:600;">red</span>, and the trajectory threads from yellow (contact) to blue (end). <em>drag</em> to orbit, <em>scroll</em> to zoom.
+            AFUN predictions across diverse scenes. Pick a <strong>scene</strong> below to see AFUN's prediction for <strong>every language query</strong> in that scene, side by side. Points inside the predicted affordance mask are highlighted in <span style="color:#E53935; font-weight:600;">red</span>, and the trajectory threads from yellow (contact) to blue (end). <em>drag</em> to orbit, <em>scroll</em> to zoom.
           </p>
           <p class="has-text-centered preds-legend-wrap" style="margin-bottom: 0.75rem;">
             <span class="preds-legend">
@@ -186,25 +186,11 @@
           <!-- Scene selector (horizontal thumbnail strip) -->
           <div class="preds-scene-strip" id="predsSceneStrip" role="tablist" aria-label="Scenes"></div>
 
-          <!-- Main viewer for the currently selected (scene, query) -->
-          <div class="preds-viewer" id="predsViewer" role="region" aria-live="polite">
-            <div class="preds-viewer-figure">
-              <canvas class="preds-canvas" id="predsCanvas"></canvas>
-              <div class="preds-loading" id="predsLoading">Loading 3D&hellip;</div>
-              <div class="preds-thumb">
-                <img id="predsThumbImg" alt="Input RGB" />
-              </div>
-              <div class="preds-hint">drag to orbit</div>
-            </div>
+          <!-- Selected scene name (eyebrow heading above the grid) -->
+          <div class="preds-scene-name" id="predsSceneName"></div>
 
-            <div class="preds-viewer-caption">
-              <div class="preds-scene-name" id="predsSceneName"></div>
-              <div class="preds-instr"     id="predsInstr"></div>
-            </div>
-
-            <!-- Query selector (shown only when the scene has &gt; 1 query) -->
-            <div class="preds-query-bar" id="predsQueryBar" role="tablist" aria-label="Text queries"></div>
-          </div>
+          <!-- One viewer per query for the selected scene (all shown at once). -->
+          <div class="preds-viewer-grid" id="predsViewerGrid" role="region" aria-live="polite"></div>
         </div>
       </div>
     </div>
@@ -213,11 +199,11 @@
 
   <!-- Real-Robot Deployment (videos) -->
   <section class="section" id="robot">
-    <div class="container is-max-desktop">
+    <div class="container is-max-widescreen">
       <div class="columns is-centered has-text-centered">
-        <div class="column is-four-fifths">
+        <div class="column is-full">
           <h2 class="title is-3">Real-Robot Deployment</h2>
-          <p style="text-align: left; margin-bottom: 0.75rem;">
+          <p style="text-align: left; max-width: 900px; margin: 0 auto 0.75rem;">
             Without any robot-specific finetuning, AFUN predicts a precise functional mask and 3D motion that the robot uses to plan and execute manipulation in the real world. The same model generalizes across object categories, language instructions, and embodiments, suggesting a practical path toward open-world affordance models that unify functionality perception with executable action.
           </p>
 
@@ -415,7 +401,7 @@
     }
 
 
-    // ==== VIDEO GALLERY (2 visible, step by one) ====
+    // ==== VIDEO GALLERY (3 visible, step by one) ====
     const VIDS = [
       { src: './AFUN-supplementary-videos/Lid_on_pot_1.mp4',  caption: 'Put the lid on the pot' },
       { src: './AFUN-supplementary-videos/Microwave_1.mp4',   caption: 'Open the microwave' },
@@ -800,45 +786,76 @@
         startGeom.dispose(); startMat.dispose();
         endGeom.dispose();   endMat.dispose();
         renderer.dispose();
+        // Release the WebGL context now. With up to 3 viewers rebuilt on every
+        // scene switch, relying on GC alone can hit the browser's context limit
+        // and blank out the canvases.
+        if (renderer.forceContextLoss) renderer.forceContextLoss();
       }
       return { start, stop, dispose, handleResize };
     }
 
-    // ---- Single-viewer controller driven by scene + query selectors ----
+    // ---- Multi-viewer controller: every query for a scene shown at once ----
     // Layout:
     //   - scenes.json describes scenes; each has 1+ queries pointing at entry_ids
-    //   - on scene change: rebuild the query pill bar, switch to its first query
-    //   - on query change: dispose the previous Three.js viewer, fetch the new
-    //     entry's trajectory + point cloud, reinit the viewer in the same canvas.
+    //   - on scene change: dispose all viewers, then build one viewer card per
+    //     query and load each query's trajectory + point cloud into its own canvas.
+    // Every card is a fixed width regardless of how many queries a scene has
+    // (1 or 3), so the canvas size and on-screen point size stay consistent.
     // Falls back to legacy index.json (flat entries) when scenes.json is absent.
 
-    const sceneStrip   = document.getElementById('predsSceneStrip');
-    const queryBar     = document.getElementById('predsQueryBar');
-    const sceneNameEl  = document.getElementById('predsSceneName');
-    const instrEl      = document.getElementById('predsInstr');
-    const thumbImg     = document.getElementById('predsThumbImg');
-    const canvasEl     = document.getElementById('predsCanvas');
-    const loadingEl    = document.getElementById('predsLoading');
-    const figureEl     = canvasEl && canvasEl.parentElement;
+    const sceneStrip  = document.getElementById('predsSceneStrip');
+    const sceneNameEl = document.getElementById('predsSceneName');
+    const viewerGrid  = document.getElementById('predsViewerGrid');
 
-    let state = { scenes: [], sceneIdx: 0, queryIdx: 0, viewer: null, loadToken: 0 };
+    let state = { scenes: [], sceneIdx: 0, viewers: [], loadToken: 0 };
 
-    function disposeCurrentViewer() {
-      if (state.viewer) {
-        try { state.viewer.dispose(); } catch (_) {}
-        state.viewer = null;
-      }
+    // Run viewers only while the gallery is on screen and the tab is visible.
+    // With up to 3 live WebGL viewers this keeps the page light when away.
+    let gridOnScreen = true;
+    function syncViewerRunning() {
+      const run = gridOnScreen && !document.hidden;
+      state.viewers.forEach(v => { try { run ? v.start() : v.stop(); } catch (_) {} });
     }
 
-    async function loadEntry(entryId) {
-      // Guard against rapid clicks: only the most-recent load may commit.
-      const myToken = ++state.loadToken;
-      disposeCurrentViewer();
-      if (figureEl) figureEl.classList.add('is-loading');
-      if (loadingEl) {
-        loadingEl.textContent = 'Loading 3D…';
-        loadingEl.style.display = 'flex';
-      }
+    function disposeAllViewers() {
+      state.viewers.forEach(v => { try { v.dispose(); } catch (_) {} });
+      state.viewers = [];
+    }
+
+    // Build one viewer card (figure + canvas + RGB thumb + query label) and kick
+    // off its async load. `token` ties the load to the current scene selection so
+    // stale loads from a previously selected scene are dropped.
+    function buildQueryCard(q, token) {
+      const card    = make('div', 'preds-viewer-card');
+      const figure  = make('div', 'preds-viewer-figure');
+      const canvas  = make('canvas', 'preds-canvas');
+      const loading = make('div', 'preds-loading', 'Loading 3D&hellip;');
+
+      const thumb    = make('div', 'preds-thumb');
+      const thumbImg = new Image();
+      thumbImg.loading = 'lazy';
+      thumbImg.alt = q.text || q.id;
+      thumbImg.src = `${RESULTS_BASE}${q.id}/rgb.png`;
+      thumb.appendChild(thumbImg);
+
+      figure.appendChild(canvas);
+      figure.appendChild(loading);
+      figure.appendChild(thumb);
+      figure.appendChild(make('div', 'preds-hint', 'drag to orbit'));
+
+      const label = make('div', 'preds-card-query', `“${(q.text || '').trim()}”`);
+
+      card.appendChild(figure);
+      card.appendChild(label);
+      viewerGrid.appendChild(card);
+
+      loadEntryIntoCard({ canvas, figure, loading }, q.id, token);
+    }
+
+    async function loadEntryIntoCard(els, entryId, token) {
+      const { canvas, figure, loading } = els;
+      if (figure) figure.classList.add('is-loading');
+      if (loading) { loading.textContent = 'Loading 3D…'; loading.style.display = 'flex'; }
       try {
         const [trajText, pcBuf] = await Promise.all([
           fetch(`${RESULTS_BASE}${entryId}/trajectory_50pts.txt`)
@@ -846,46 +863,21 @@
           fetch(`${RESULTS_BASE}${entryId}/pointcloud_small.bin`)
             .then(r => r.ok ? r.arrayBuffer() : Promise.reject(r.status)),
         ]);
-        if (myToken !== state.loadToken) return;   // a newer load has started
+        if (token !== state.loadToken) return;   // a newer scene was selected
         const traj3d = parseTrajectoryText(trajText);
         const pc     = parsePointCloudBin(pcBuf);
         if (!pc || !traj3d.length) throw new Error('empty data');
 
-        state.viewer = createThreeViewer(canvasEl, pc, traj3d);
-        state.viewer.start();
-        if (figureEl) figureEl.classList.remove('is-loading');
-        if (loadingEl) loadingEl.style.display = 'none';
+        const viewer = createThreeViewer(canvas, pc, traj3d);
+        state.viewers.push(viewer);
+        if (gridOnScreen && !document.hidden) viewer.start();
+        if (figure)  figure.classList.remove('is-loading');
+        if (loading) loading.style.display = 'none';
       } catch (err) {
-        if (myToken !== state.loadToken) return;
+        if (token !== state.loadToken) return;
         console.warn('3D viewer init failed for', entryId, err);
-        if (loadingEl) {
-          loadingEl.textContent = '3D unavailable';
-          loadingEl.style.display = 'flex';
-        }
+        if (loading) { loading.textContent = '3D unavailable'; loading.style.display = 'flex'; }
       }
-    }
-
-    function selectQuery(qIdx) {
-      const scene = state.scenes[state.sceneIdx];
-      if (!scene) return;
-      state.queryIdx = qIdx;
-      const q = scene.queries[qIdx];
-
-      // Update caption.
-      sceneNameEl.textContent = scene.name || '';
-      instrEl.textContent     = `“${(q.text || '').trim()}”`;
-      // Swap RGB thumb. (For multi-query scenes the RGB is the same scene image;
-      // we just point at the chosen entry's rgb.png for simplicity.)
-      thumbImg.src = `${RESULTS_BASE}${q.id}/rgb.png`;
-      thumbImg.alt = q.text || q.id;
-
-      // Update pill aria-selected state.
-      queryBar.querySelectorAll('.preds-query-pill').forEach((btn, i) => {
-        btn.setAttribute('aria-selected', i === qIdx ? 'true' : 'false');
-        btn.tabIndex = i === qIdx ? 0 : -1;
-      });
-
-      loadEntry(q.id);
     }
 
     function selectScene(sIdx, { scrollChip } = {}) {
@@ -893,32 +885,23 @@
       if (!scene) return;
       state.sceneIdx = sIdx;
 
-      // Update scene-chip aria-selected.
+      // Invalidate in-flight loads from the previous scene and tear down its viewers.
+      const token = ++state.loadToken;
+      disposeAllViewers();
+      viewerGrid.innerHTML = '';
+
       sceneStrip.querySelectorAll('.preds-scene-chip').forEach((btn, i) => {
         btn.setAttribute('aria-selected', i === sIdx ? 'true' : 'false');
       });
 
-      // Rebuild query pills.
-      queryBar.innerHTML = '';
-      if (scene.queries.length > 1) {
-        scene.queries.forEach((q, i) => {
-          const pill = make('button', 'preds-query-pill');
-          pill.type = 'button';
-          pill.setAttribute('role', 'tab');
-          pill.setAttribute('aria-selected', 'false');
-          pill.textContent = q.text || q.id;
-          pill.addEventListener('click', () => selectQuery(i));
-          queryBar.appendChild(pill);
-        });
-      }
-      // Open on the scene's default query if one is flagged, else the first.
-      const dq = scene.queries.findIndex(q => q.default);
-      selectQuery(dq >= 0 ? dq : 0);
+      sceneNameEl.textContent = scene.name || '';
+
+      // One viewer per query — all queries for the scene shown side by side.
+      scene.queries.forEach(q => buildQueryCard(q, token));
 
       // Keep the active chip centered in the strip — but only on a user click.
       // (On the initial load the gallery is below the fold; scrolling it into
-      // view would yank the whole page down.) scrollIntoView with inline:'center'
-      // can still nudge the page vertically, so we scroll the strip directly.
+      // view would yank the whole page down.)
       if (scrollChip) {
         const chip = sceneStrip.querySelectorAll('.preds-scene-chip')[sIdx];
         if (chip) {
@@ -954,8 +937,7 @@
     }
 
     function initGallery(scenes) {
-      // Build chips from the filtered list so chip index i === state.scenes[i]
-      // (selectScene/selectQuery both index into state.scenes).
+      // Build chips from the filtered list so chip index i === state.scenes[i].
       state.scenes = scenes.filter(s => s && s.queries && s.queries.length);
       if (!state.scenes.length) return;
       state.scenes.forEach((s, i) => sceneStrip.appendChild(buildSceneChip(s, i)));
@@ -966,7 +948,7 @@
 
     // Prefer scenes.json (new grouped layout). Fall back to legacy index.json:
     // each flat entry becomes a one-query scene so the UI still works.
-    if (sceneStrip && canvasEl) {
+    if (sceneStrip && viewerGrid) {
       fetch(`${RESULTS_BASE}scenes.json`)
         .then(r => r.ok ? r.json() : Promise.reject(r.status))
         .catch(() =>
@@ -982,12 +964,17 @@
         .then(initGallery)
         .catch(err => console.warn('Could not load prediction gallery:', err));
 
-      // Pause the viewer when the tab is hidden; resume on visibility return.
-      document.addEventListener('visibilitychange', () => {
-        if (!state.viewer) return;
-        if (document.hidden) state.viewer.stop();
-        else state.viewer.start();
-      });
+      // Pause/resume all viewers when the tab is hidden or shown.
+      document.addEventListener('visibilitychange', syncViewerRunning);
+
+      // Pause/resume all viewers as the gallery scrolls in and out of view.
+      if ('IntersectionObserver' in window) {
+        const gridObs = new IntersectionObserver((entries) => {
+          gridOnScreen = entries.some(e => e.isIntersecting);
+          syncViewerRunning();
+        }, { threshold: 0.02 });
+        gridObs.observe(viewerGrid);
+      }
     }
   })();
   </script>
