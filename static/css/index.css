@@ -472,6 +472,7 @@ body {
 
 .vid-figure {
   width: 100%;
+  aspect-ratio: 16 / 9;     /* uniform video window across all clips */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -481,9 +482,9 @@ body {
 }
 .vid-figure video {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
-  object-fit: contain;
+  object-fit: contain;      /* fit whole frame; mismatched ratios get black bars */
 }
 
 .vid-caption {
