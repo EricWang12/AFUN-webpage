@@ -3,6 +3,7 @@
     "id": "kitchen",
     "name": "Kitchen",
     "thumb": "kitchen/use_the_microwave/rgb.png",
+    "default": true,
     "queries": [
       {
         "id": "kitchen/use_the_microwave",
@@ -22,12 +23,10 @@
     "id": "wood_cabinet",
     "name": "Wood Cabinet",
     "thumb": "wood_cabinet/open_the_left_cabinet_door/rgb.png",
-    "default": true,
     "queries": [
       {
         "id": "wood_cabinet/open_the_left_cabinet_door",
-        "text": "Open the left cabinet door",
-        "default": true
+        "text": "Open the left cabinet door"
       },
       {
         "id": "wood_cabinet/open_the_right_cabinet_door",
